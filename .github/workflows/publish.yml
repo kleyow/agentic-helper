@@ -37,7 +37,7 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm test
+        run: node --experimental-vm-modules node_modules/.bin/jest --no-coverage
 
       - name: Smoke-test CLI
         run: node bin/agentic-helper.js --version && node bin/agentic-helper.js list
