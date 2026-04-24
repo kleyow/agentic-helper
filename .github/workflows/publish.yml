@@ -1,0 +1,62 @@
+name: Publish to npm
+
+on:
+  # Trigger when a GitHub Release is published
+  release:
+    types: [published]
+  # Also allow manual dispatch for testing
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (pack only, do not publish)"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # required for npm provenance
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Smoke-test CLI
+        run: node bin/agentic-helper.js --version && node bin/agentic-helper.js list
+
+      # Sync the package.json version with the Git tag (e.g. v1.2.3 → 1.2.3)
+      - name: Sync version from release tag
+        if: github.event_name == 'release'
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          echo "Setting package version to ${VERSION}"
+          npm version "${VERSION}" --no-git-tag-version
+
+      - name: Pack (dry run)
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        run: npm pack --dry-run
+
+      - name: Publish to npm
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
