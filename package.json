@@ -4,8 +4,8 @@
   "description": "CLI tool to scaffold and maintain AI assistant context files for your repository",
   "type": "module",
   "bin": {
-    "agentic-helper": "./bin/agentic-helper.js",
-    "agh": "./bin/agentic-helper.js"
+    "agentic-helper": "bin/agentic-helper.js",
+    "agh": "bin/agentic-helper.js"
   },
   "main": "./src/index.js",
   "files": [
